@@ -1,0 +1,37 @@
+{
+  "name": "pilaf",
+  "version": "0.0.0",
+  "main": "dist/main/index.js",
+  "types": "dist/types/index.d.ts",
+  "module": "dist/module/index.js",
+  "source": "src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "prepare": "yarn build",
+    "test": "jest",
+    "docz.dev": "docz dev --port 6069",
+    "docz.build": "docz build",
+    "build.main": "tsc -P tsconfig.main.json",
+    "build.module": "tsc -P tsconfig.module.json",
+    "build.types": "tsc -P tsconfig.types.json --emitDeclarationOnly",
+    "build": "yarn build.main; yarn build.module; yarn build.types"
+  },
+  "peerDependencies": {},
+  "dependencies": {
+    "immer": "^1.9.2"
+  },
+  "devDependencies": {
+    "@nju33/tsconfig-main": "^0.0.3",
+    "@nju33/tsconfig-module": "^0.0.3",
+    "@nju33/tsconfig-types": "^0.0.3",
+    "@types/jest": "^23.3.10",
+    "jest": "^23.6.0",
+    "prettier": "^1.15.3",
+    "ts-jest": "^23.10.5",
+    "tslint": "^5.11.0",
+    "typescript": "^3.2.2"
+  }
+}

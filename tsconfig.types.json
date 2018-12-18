@@ -1,0 +1,10 @@
+{
+  "extends": "@nju33/tsconfig-types",
+  "include": [
+    "src"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "outDir": "dist/types"
+  }
+}
