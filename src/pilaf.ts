@@ -6,30 +6,26 @@ type ArrayedObject<T extends object> = {[P in keyof T]: T[P][]};
  */
 type A<T extends object> = ArrayedObject<T> & {[x: string]: object[]};
 
-export class Pilaf<
-  T extends object,
-  R extends Record<
-    keyof T,
-    (
-      handlers: {
-        [P in keyof T]: (
+type Handlers<T extends object> = Record<
+  keyof T,
+  (
+    handlers: {
+      [P in keyof T]: {
+        hasOne(name: keyof T[P], base: string): {[x: string]: [string, string]};
+        hasMany(
           name: keyof T[P],
-          bind: string,
-        ) => {[x: string]: [string, string]} | void
-      },
-    ) => {[x: string]: [string, string]} | void
-  > = Record<
-    keyof T,
-    (
-      handlers: {
-        [P in keyof T]: (
+          base: string,
+        ): {[x: string]: [string, string]};
+        belongsTo(
           name: keyof T[P],
-          bind: string,
-        ) => {[x: string]: [string, string]} | void
-      },
-    ) => {[x: string]: [string, string]} | void
-  >
-> {
+          base: string,
+        ): {[x: string]: [string, string]};
+      }
+    },
+  ) => {[x: string]: [string, string]} | void
+>;
+
+export class Pilaf<T extends object, R extends Handlers<T> = Handlers<T>> {
   tables: A<T>;
 
   constructor(public readonly resolvers: R) {
@@ -70,22 +66,40 @@ export class Pilaf<
     },
   });
 
-  select(name: keyof T) {
+  select<U extends object>(name: keyof T): U {
     const cb = this.resolvers[name];
 
     const keys = Object.keys(this.tables) as (keyof T)[];
     const tableHandlers = keys.reduce(
       (result, key) => {
-        result[key] = (name, base) => {
-          return {[base]: [key as string, name as string]};
+        result[key] = {
+          hasOne(name, base) {
+            return {[base]: [key as string, name as string]};
+          },
+          hasMany(name, base) {
+            return {[base]: [key as string, name as string]};
+          },
+          belongsTo(name, base) {
+            return {[base]: [key as string, name as string]};
+          },
         };
         return result;
       },
       {} as {
-        [P in keyof T]: (
-          name: keyof T[P],
-          base: string,
-        ) => {[x: string]: [string, string]}
+        [P in keyof T]: {
+          hasOne(
+            name: keyof T[P],
+            base: string,
+          ): {[x: string]: [string, string]};
+          hasMany(
+            name: keyof T[P],
+            base: string,
+          ): {[x: string]: [string, string]};
+          belongsTo(
+            name: keyof T[P],
+            base: string,
+          ): {[x: string]: [string, string]};
+        }
       },
     );
 
@@ -113,6 +127,6 @@ export class Pilaf<
         },
         {} as any,
       );
-    });
+    }) as U;
   }
 }
