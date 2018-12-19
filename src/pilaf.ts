@@ -7,10 +7,8 @@ type ArrayedObject<T extends object> = {[P in keyof T]: T[P][]};
 type A<T extends object> = ArrayedObject<T> & {[x: string]: object[]};
 
 enum ResolverResultType {
-  OneToOne,
-  ManyToOne,
-  OneToMany,
-  ManyToMany,
+  One,
+  Many,
 }
 
 const resolverResultMap: WeakMap<
@@ -37,10 +35,8 @@ interface ResolverHandlerFunction<T extends object, P extends keyof T> {
 interface ResolverHandler<T extends object, P extends keyof T> {
   (name: keyof T[P], propName: string): ResolverHandler<T, P>;
   (name: keyof T[P]): ResolverHandler<T, P>;
-  oneToOne: ResolverHandlerFunction<T, P>;
-  oneToMany: ResolverHandlerFunction<T, P>;
-  manyToOne: ResolverHandlerFunction<T, P>;
-  manyToMany: ResolverHandlerFunction<T, P>;
+  one: ResolverHandlerFunction<T, P>;
+  many: ResolverHandlerFunction<T, P>;
 }
 
 type ResolverHandlers<T extends object> = {
@@ -121,9 +117,9 @@ export class Pilaf<T extends object, R extends Resolvers<T> = Resolvers<T>> {
           });
           return this as Function;
         };
-        handle.oneToOne = (base: string, name?: P) => {
+        handle.one = function(base: string, name?: P) {
           return {
-            type: ResolverResultType.OneToOne,
+            type: ResolverResultType.One,
             propName: resolverResultMap.has(this)
               ? resolverResultMap.get(this)!.propName || key
               : key,
@@ -137,41 +133,9 @@ export class Pilaf<T extends object, R extends Resolvers<T> = Resolvers<T>> {
             ] as any,
           };
         };
-        handle.oneToMany = function(base: string, name?: P) {
+        handle.many = function(base: string, name?: keyof T) {
           return {
-            type: ResolverResultType.OneToMany,
-            propName: resolverResultMap.has(this)
-              ? resolverResultMap.get(this)!.propName || key
-              : key,
-            from: tableName,
-            base,
-            paths: [
-              key,
-              (resolverResultMap.has(this)
-                ? resolverResultMap.get(this)!.name
-                : name) as string,
-            ] as [string, string],
-          };
-        };
-        handle.manyToOne = function(base: string, name?: keyof T) {
-          return {
-            type: ResolverResultType.ManyToOne,
-            propName: resolverResultMap.has(this)
-              ? resolverResultMap.get(this)!.propName
-              : key,
-            from: tableName,
-            base,
-            paths: [
-              key,
-              (resolverResultMap.has(this)
-                ? resolverResultMap.get(this)!.name || key
-                : name) as string,
-            ] as [string, string],
-          };
-        };
-        handle.manyToMany = function(base: string, name?: keyof T) {
-          return {
-            type: ResolverResultType.ManyToMany,
+            type: ResolverResultType.Many,
             propName: resolverResultMap.has(this)
               ? resolverResultMap.get(this)!.propName
               : key,
@@ -214,11 +178,11 @@ export class Pilaf<T extends object, R extends Resolvers<T> = Resolvers<T>> {
             return result;
           }
 
+          // 元も取っておく
+          result[key] = item[key];
+
           switch (targetProp.type) {
-            case ResolverResultType.OneToOne: {
-              throw new Error('todo');
-            }
-            case ResolverResultType.OneToMany: {
+            case ResolverResultType.One: {
               result[targetProp.propName] = targetProp.paths.reduce(
                 (result, path, i) => {
                   if (i === 0) {
@@ -236,10 +200,7 @@ export class Pilaf<T extends object, R extends Resolvers<T> = Resolvers<T>> {
               );
               return result;
             }
-            case ResolverResultType.ManyToOne: {
-              throw new Error('todo');
-            }
-            case ResolverResultType.ManyToMany: {
+            case ResolverResultType.Many: {
               result[targetProp.propName] = targetProp.paths.reduce(
                 (result, path, i) => {
                   if (i === 0) {
@@ -267,7 +228,7 @@ export class Pilaf<T extends object, R extends Resolvers<T> = Resolvers<T>> {
     }) as U;
 
     if (clear) {
-      this.tables = Pilaf.initTables<A<T>>(Object.keys(resolvers));
+      this.tables = Pilaf.initTables<A<T>>(Object.keys(this.tables));
     }
     return result;
   }
