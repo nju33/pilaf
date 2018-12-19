@@ -59,6 +59,14 @@ beforeEach(() => {
   pilaf.add('userHobbies', userHobbies[2]);
 });
 
+test('', () => {
+  const store = pilaf.create();
+  store(({users}) => {
+    users.add();
+    // userHobbies.add();
+  });
+});
+
 test('removeBy.id', () => {
   expect(pilaf.tables.users).toMatchObject(users);
   pilaf.removeBy('users').id(0);

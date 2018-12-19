@@ -1,10 +1,10 @@
-import produce from 'immer';
+import produce, {Draft} from 'immer';
 
 type ArrayedObject<T extends object> = {[P in keyof T]: T[P][]};
 /**
  * @alias
  */
-type A<T extends object> = ArrayedObject<T> & {[x: string]: object[]};
+type A<T extends object> = ArrayedObject<T>;
 
 enum ResolverResultType {
   One,
@@ -49,6 +49,19 @@ interface ResolverFunction<T extends object> {
 
 type Resolvers<T extends object> = Record<keyof T, ResolverFunction<T>>;
 
+interface StoreHandlerFunctions<T extends object> {
+  add(item: any): void;
+  removeBy(itemProp: any, value: any): void;
+}
+type StoreHandlers<T extends object> = {
+  [P in keyof T]: StoreHandlerFunctions<T>
+};
+// type Store<T extends object> = StoreHandlers<T> &
+//   ((tables: StoreHandlers<T>) => void);
+interface Store<T extends object> {
+  (tables: StoreHandlers<T>): void;
+}
+
 export class Pilaf<
   IS extends object,
   OS extends Record<keyof IS, any>,
@@ -56,7 +69,7 @@ export class Pilaf<
 > {
   tables: A<IS>;
 
-  static initTables<U>(keys: string[]) {
+  static createTables<U>(keys: string[]) {
     return produce<U>(draft => {
       keys.forEach(key => {
         (draft as any)[key] = [];
@@ -65,7 +78,7 @@ export class Pilaf<
   }
 
   constructor(public readonly resolvers: R) {
-    this.tables = Pilaf.initTables<A<IS>>(Object.keys(resolvers));
+    this.tables = Pilaf.createTables<A<IS>>(Object.keys(resolvers));
   }
 
   add<P extends keyof IS>(name: P, item: IS[P]): this {
@@ -97,6 +110,49 @@ export class Pilaf<
       return removed;
     },
   });
+
+  createTableHandler = <P extends keyof IS, I extends IS[P] = IS[P]>(
+    tableName: P,
+  ) => (draft: A<IS>): StoreHandlerFunctions<IS> => {
+    return {
+      add: (item: I) => {
+        draft[tableName].push(item);
+      },
+      removeBy: <IP extends keyof IS[P]>(
+        itemProp: IP,
+        value: NonNullable<IS[P][IP]>,
+      ) => {
+        draft[tableName] = draft[tableName].filter(
+          item => item[itemProp] !== value,
+        );
+      },
+    };
+  };
+
+  create<R extends Store<IS> = Store<IS>>(): R {
+    const tableNames = Object.keys(this.tables) as (keyof IS)[];
+    const createTableHandler = this.createTableHandler;
+
+    const store = function(
+      this: StoreHandlers<IS> & {tables: any},
+      cb: (handlers: StoreHandlers<IS>) => void,
+      // cb: (handlers: StoreHandlers<IS>) => void,
+    ) {
+      this.tables = produce<A<IS>>(draft => {
+        const storeHandlers = tableNames.reduce(
+          (result, tableName) => {
+            result[tableName] = createTableHandler(tableName)(draft as any);
+            return result;
+          },
+          {} as StoreHandlers<IS>,
+        );
+
+        cb(storeHandlers);
+      })(Pilaf.createTables<A<IS>>(tableNames as string[]));
+    };
+
+    return (store as Function).bind(store);
+  }
 
   /**
    * 関係を構築して返す
@@ -237,6 +293,6 @@ export class Pilaf<
   }
 
   clear() {
-    this.tables = Pilaf.initTables<A<IS>>(Object.keys(this.tables));
+    this.tables = Pilaf.createTables<A<IS>>(Object.keys(this.tables));
   }
 }
