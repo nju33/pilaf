@@ -1,6 +1,6 @@
 {
   "name": "pilaf",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "dist/main/index.js",
   "types": "dist/types/index.d.ts",
   "module": "dist/module/index.js",
