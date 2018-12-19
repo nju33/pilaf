@@ -1,19 +1,33 @@
 import {Pilaf} from './pilaf';
 
-interface Schema {
+interface InputSchema {
   users: {
     id: number;
     name: string;
     createdAt?: string;
   };
   userHobbies: {
-    userId: Schema['users']['id'];
+    userId: InputSchema['users']['id'];
     id: number;
     name: string;
   };
 }
 
-let pilaf: Pilaf<Schema>;
+interface OutputSchema {
+  users: {
+    id: number;
+    name: string;
+    createdAt?: string;
+    hobbies: InputSchema['userHobbies'];
+  };
+  userHobbies: {
+    user: InputSchema['users'];
+    id: number;
+    name: string;
+  };
+}
+
+let pilaf: Pilaf<InputSchema, OutputSchema>;
 const users = [{id: 0, name: 'foo'}, {id: 1, name: 'bar'}];
 const userHobbies = [
   {
@@ -34,7 +48,7 @@ const userHobbies = [
 ];
 
 beforeEach(() => {
-  pilaf = new Pilaf<Schema>({
+  pilaf = new Pilaf<InputSchema, OutputSchema>({
     users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
     userHobbies: ({users}) => [users('id', 'user').one('userId')],
   });
@@ -52,12 +66,7 @@ test('removeBy.id', () => {
 });
 
 test('one resolve', () => {
-  const userHobbies = pilaf.select<
-    Pick<
-      Schema['userHobbies'],
-      Exclude<keyof Schema['userHobbies'], 'userId'>
-    > & {user: Schema['users'][]}
-  >('userHobbies');
+  const userHobbies = pilaf.select('userHobbies');
   expect(userHobbies).toMatchObject([
     {
       id: 0,
@@ -78,9 +87,7 @@ test('one resolve', () => {
 });
 
 test('many resolve', () => {
-  const users = pilaf.select<
-    Schema['users'] & {hobbies: Schema['userHobbies'][]}
-  >('users');
+  const users = pilaf.select('users');
   expect(users).toMatchObject([
     {
       id: 0,
@@ -96,11 +103,7 @@ test('many resolve', () => {
 });
 
 test('select [clear=true]', () => {
-  expect(
-    pilaf.select<
-      Exclude<Schema['userHobbies'], 'userId'> & {user: Schema['users'][]}
-    >('userHobbies'),
-  ).toMatchObject([
+  expect(pilaf.select('userHobbies')).toMatchObject([
     {
       id: 0,
       name: 'プログラミング',
@@ -126,4 +129,10 @@ test('select clear=false', () => {
   pilaf.select('users', false);
   expect(pilaf.tables.users).toBeInstanceOf(Array);
   expect(pilaf.tables.users).not.toHaveLength(0);
+});
+
+test('clear', () => {
+  pilaf.clear();
+  expect(pilaf.tables.users).toBeInstanceOf(Array);
+  expect(pilaf.tables.users).toHaveLength(0);
 });
