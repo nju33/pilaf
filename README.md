@@ -57,9 +57,9 @@ pilaf.add('userHobbies', userHobbies[2]);
 
 const userHobbies = pilaf.select('userHobbies', false);
 expect(userHobbies).toMatchObject([
-  {id: 0, name: 'プログラミング', user: users[0]},
-  {id: 1, name: 'ゲーム', user: users[1]},
-  {id: 2, name: '料理', user: users[0]},
+  {user: users[0], id: 0, name: 'hoge'},
+  {user: users[1], id: 1, name: 'fuga'},
+  {user: users[0], id: 2, name: 'piyo'},
 ]);
 // this.tables.userHobbies.length === 3
 
