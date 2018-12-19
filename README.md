@@ -9,7 +9,7 @@ yarn add pilaf
 ## Example
 
 ```ts
-import {Pilaf} from 'pilaf';
+import Pilaf from 'pilaf';
 
 interface InputSchema {
   users: {

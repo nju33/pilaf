@@ -50,11 +50,11 @@ interface ResolverFunction<T extends object> {
 type Resolvers<T extends object> = Record<keyof T, ResolverFunction<T>>;
 
 export class Pilaf<
-  IO extends object,
-  OO extends Record<keyof IO, any>,
-  R extends Resolvers<IO> = Resolvers<IO>
+  IS extends object,
+  OS extends Record<keyof IS, any>,
+  R extends Resolvers<IS> = Resolvers<IS>
 > {
-  tables: A<IO>;
+  tables: A<IS>;
 
   static initTables<U>(keys: string[]) {
     return produce<U>(draft => {
@@ -65,25 +65,25 @@ export class Pilaf<
   }
 
   constructor(public readonly resolvers: R) {
-    this.tables = Pilaf.initTables<A<IO>>(Object.keys(resolvers));
+    this.tables = Pilaf.initTables<A<IS>>(Object.keys(resolvers));
   }
 
-  add<P extends keyof IO>(name: P, item: IO[P]): this {
-    this.tables = produce<A<IO>>(draft => {
-      ((draft as any)[name] as IO[P][]).push(item);
+  add<P extends keyof IS>(name: P, item: IS[P]): this {
+    this.tables = produce<A<IS>>(draft => {
+      ((draft as any)[name] as IS[P][]).push(item);
     })(this.tables);
 
     return this;
   }
 
-  removeBy = <P extends keyof IO>(name: P) => ({
+  removeBy = <P extends keyof IS>(name: P) => ({
     /**
      * Proxy化したい
      */
     id: (id: number): boolean => {
       let removed = false;
-      this.tables = produce<A<IO>>(draft => {
-        (draft as any)[name] = ((draft as any)[name] as IO[P][]).filter(
+      this.tables = produce<A<IS>>(draft => {
+        (draft as any)[name] = ((draft as any)[name] as IS[P][]).filter(
           (item: any) => {
             const result = item.id === id;
             if (result) {
@@ -104,10 +104,10 @@ export class Pilaf<
    * @param clear テーブルを初期状態に戻すかどうか
    * @returns 関係構築済みのオブジェクト
    */
-  select<P extends keyof IO = keyof IO, R extends OO[P][] = OO[P][]>(
+  select<P extends keyof IS = keyof IS, R extends OS[P][] = OS[P][]>(
     tableName: P,
     clear: boolean = true,
-  ): OO[P][] {
+  ): OS[P][] {
     const cb = this.resolvers[tableName];
 
     const keys = Object.keys(this.tables) as P[];
@@ -157,11 +157,11 @@ export class Pilaf<
 
         return result;
       },
-      {} as ResolverHandlers<IO> &
+      {} as ResolverHandlers<IS> &
         ((
-          this: ResolverHandler<IO, P>,
-          name: keyof IO[P],
-        ) => ResolverHandler<IO, P>),
+          this: ResolverHandler<IS, P>,
+          name: keyof IS[P],
+        ) => ResolverHandler<IS, P>),
     );
 
     const resolvers = cb(tableHandlers);
@@ -237,6 +237,6 @@ export class Pilaf<
   }
 
   clear() {
-    this.tables = Pilaf.initTables<A<IO>>(Object.keys(this.tables));
+    this.tables = Pilaf.initTables<A<IS>>(Object.keys(this.tables));
   }
 }
