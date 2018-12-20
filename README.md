@@ -50,11 +50,11 @@ const pilaf = new Pilaf<InputSchema, OutputSchema>({
   userHobbies: ({users}) => [users('id', 'user').one('userId')],
 });
 const store = pilaf.create()(({users, userHobbies}) => {
-  users.add('users', userList[0]);
-  users.add('users', userList[1]);
-  userHobbies.add('userHobbies', userHobbyList[0]);
-  userHobbies.add('userHobbies', userHobbyList[1]);
-  userHobbies.add('userHobbies', userHobbyList[2]);
+  users.add(userList[0]);
+  users.add(userList[1]);
+  userHobbies.add(userHobbyList[0]);
+  userHobbies.add(userHobbyList[1]);
+  userHobbies.add(userHobbyList[2]);
 });
 
 expect(store.users).toMatchObject([
