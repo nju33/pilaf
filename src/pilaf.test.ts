@@ -59,44 +59,20 @@ beforeEach(() => {
   pilaf.add('userHobbies', userHobbies[2]);
 });
 
-test('', () => {
-  const store = pilaf.create();
-  store(({users}) => {
-    users.add();
-    // userHobbies.add();
+test('set & get items', () => {
+  let store = pilaf.create();
+  const userList = users;
+  const userHobbyList = userHobbies;
+
+  store = store(({users, userHobbies}) => {
+    users.add(userList[0]);
+    users.add(userList[1]);
+    userHobbies.add(userHobbyList[0]);
+    userHobbies.add(userHobbyList[1]);
+    userHobbies.add(userHobbyList[2]);
   });
-});
 
-test('removeBy.id', () => {
-  expect(pilaf.tables.users).toMatchObject(users);
-  pilaf.removeBy('users').id(0);
-  expect(pilaf.tables.users).toMatchObject([users[1]]);
-});
-
-test('one resolve', () => {
-  const userHobbies = pilaf.select('userHobbies');
-  expect(userHobbies).toMatchObject([
-    {
-      id: 0,
-      name: 'プログラミング',
-      user: users[0],
-    },
-    {
-      id: 1,
-      name: 'ゲーム',
-      user: users[1],
-    },
-    {
-      id: 2,
-      name: '料理',
-      user: users[0],
-    },
-  ]);
-});
-
-test('many resolve', () => {
-  const users = pilaf.select('users');
-  expect(users).toMatchObject([
+  expect(store.users).toMatchObject([
     {
       id: 0,
       name: 'foo',
@@ -108,10 +84,8 @@ test('many resolve', () => {
       hobbies: [userHobbies[1]],
     },
   ]);
-});
 
-test('select [clear=true]', () => {
-  expect(pilaf.select('userHobbies')).toMatchObject([
+  expect(store.userHobbies).toMatchObject([
     {
       id: 0,
       name: 'プログラミング',
@@ -129,18 +103,47 @@ test('select [clear=true]', () => {
     },
   ]);
 
-  expect(pilaf.tables.users).toBeInstanceOf(Array);
-  expect(pilaf.tables.users).toHaveLength(0);
+  const alias = store(() => {});
+  expect(alias).toBe(store);
 });
 
-test('select clear=false', () => {
-  pilaf.select('users', false);
-  expect(pilaf.tables.users).toBeInstanceOf(Array);
-  expect(pilaf.tables.users).not.toHaveLength(0);
-});
+// test('removeBy.id', () => {
+//   expect(pilaf.tables.users).toMatchObject(users);
+//   pilaf.removeBy('users').id(0);
+//   expect(pilaf.tables.users).toMatchObject([users[1]]);
+// });
 
-test('clear', () => {
-  pilaf.clear();
-  expect(pilaf.tables.users).toBeInstanceOf(Array);
-  expect(pilaf.tables.users).toHaveLength(0);
-});
+// test('select [clear=true]', () => {
+//   expect(pilaf.select('userHobbies')).toMatchObject([
+//     {
+//       id: 0,
+//       name: 'プログラミング',
+//       user: users[0],
+//     },
+//     {
+//       id: 1,
+//       name: 'ゲーム',
+//       user: users[1],
+//     },
+//     {
+//       id: 2,
+//       name: '料理',
+//       user: users[0],
+//     },
+//   ]);
+
+//   expect(pilaf.tables.users).toBeInstanceOf(Array);
+//   expect(pilaf.tables.users).toHaveLength(0);
+// });
+
+// test('select clear=false', () => {
+//   pilaf.select('users', false);
+//   expect(pilaf.tables.users).toBeInstanceOf(Array);
+//   expect(pilaf.tables.users).not.toHaveLength(0);
+// });
+
+// test('clear', () => {
+//   pilaf.clear();
+//   expect(pilaf.tables.users).toBeInstanceOf(Array);
+//   expect(pilaf.tables.users).toHaveLength(0);
+// });
