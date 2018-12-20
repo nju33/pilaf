@@ -1,5 +1,8 @@
 import produce from 'immer';
-import {ArrayedObject} from './utils';
+
+export type ArrayedObject<T extends {[x: string]: any}> = {
+  [P in keyof T]: T[P][]
+};
 
 /**
  * @alias
@@ -52,19 +55,48 @@ interface ResolverFunction<T extends {[x: string]: any}> {
 
 type Resolvers<T extends object> = Record<keyof T, ResolverFunction<T>>;
 
+interface StoreHandlerUpdateByFunctionWhere<
+  T extends {[x: string]: any},
+  DP extends keyof T
+> {
+  <P extends keyof T>(itemProp: P, value: NonNullable<T[P]>): boolean;
+  (value: NonNullable<T[DP]>): boolean;
+  in<P extends keyof T>(itemProp: P, value: NonNullable<T[P]>[]): boolean;
+  in(value: NonNullable<T[DP]>[]): boolean;
+}
+
+interface StoreHandlerUpdateByFunction<T extends {[x: string]: any}> {
+  <P extends keyof T = keyof T>(
+    itemProp: P,
+    newValue: T[P],
+  ): StoreHandlerUpdateByFunctionWhere<T, P>;
+}
+
+interface StoreHandlerDeleteByFunctionWhere<V> {
+  (value: NonNullable<V>): boolean;
+  in(value: NonNullable<V>[]): boolean;
+}
+
+interface StoreHandlerDeleteByFunction<T extends {[x: string]: any}> {
+  <P extends keyof T = keyof T>(itemProp: P): StoreHandlerDeleteByFunctionWhere<
+    T[P]
+  >;
+}
+
 interface StoreHandlerFunctions<T extends {[x: string]: any}> {
   add(item: T): void;
-  updateBy<P extends keyof T>(
-    itemProp: P,
-    value: T[P],
-    newValue: Partial<T>,
-  ): void;
-  removeBy<P extends keyof T>(itemProp: P, value: T[P]): void;
+  updateBy: StoreHandlerUpdateByFunction<T>;
+  deleteBy: StoreHandlerDeleteByFunction<T>;
+  clear(): void;
 }
 
 type StoreHandlers<T extends {[x: string]: any}> = {
   [P in keyof T]: StoreHandlerFunctions<T[P]>
 };
+
+interface StoreController<T extends {[x: string]: any}> {
+  clear(): Store<T> & A<T> & StoreController<T>;
+}
 
 interface StoreHandlersFunction<T extends {[x: string]: any}> {
   (handlers: StoreHandlers<T>): void;
@@ -72,7 +104,7 @@ interface StoreHandlersFunction<T extends {[x: string]: any}> {
 
 interface Store<T extends {[x: string]: any}> {
   this: StoreHandlers<T> & {tables: any};
-  (cb: StoreHandlersFunction<T>): Store<T> & A<T>;
+  (cb: StoreHandlersFunction<T>): Store<T> & A<T> & StoreController<T>;
 }
 
 export class Pilaf<
@@ -96,59 +128,74 @@ export class Pilaf<
     this.tables = Pilaf.createTables<A<IS>>(Object.keys(resolvers));
   }
 
-  add<P extends keyof IS>(name: P, item: IS[P]): this {
-    this.tables = produce<A<IS>>(draft => {
-      ((draft as any)[name] as IS[P][]).push(item);
-    })(this.tables);
-
-    return this;
-  }
-
-  removeBy = <P extends keyof IS>(name: P) => ({
-    /**
-     * Proxy化したい
-     */
-    id: (id: number): boolean => {
-      let removed = false;
-      this.tables = produce<A<IS>>(draft => {
-        (draft as any)[name] = ((draft as any)[name] as IS[P][]).filter(
-          (item: any) => {
-            const result = item.id === id;
-            if (result) {
-              removed = true;
-            }
-            return !result;
-          },
-        );
-      })(this.tables);
-
-      return removed;
-    },
-  });
-
-  createTableHandler = <P extends keyof IS>(tableName: P) => (
+  private createTableHandler = <P extends keyof IS>(tableName: P) => (
     draft: A<IS>,
   ): StoreHandlerFunctions<IS[P]> => {
+    const updateBy: any = function<IP extends keyof IS[P]>(
+      itemProp: IP,
+      newValue: IS[P][IP],
+    ) {
+      const where = function(value: IS[P][IP]) {
+        let removed = false;
+        draft[tableName].forEach(item => {
+          const result = item[itemProp] === value;
+          if (result) {
+            if (!removed) {
+              removed = true;
+            }
+            item[itemProp] = newValue;
+          }
+        });
+
+        return removed;
+      };
+
+      where.in = (values: IS[P][IP][]) => {
+        return values.map(value => where(value)).some(Boolean);
+      };
+
+      return where;
+    };
+
+    const deleteBy: any = function<IP extends keyof IS[P]>(itemProp: IP) {
+      const where = function(value: IS[P][IP]) {
+        let removed = false;
+        draft[tableName] = draft[tableName].filter(item => {
+          const result = item[itemProp] === value;
+          if (result) {
+            removed = true;
+          }
+
+          // 引っかからないのを残したいので反転
+          return !result;
+        });
+
+        return removed;
+      };
+
+      where.in = (values: IS[P][IP][]) => {
+        return values.map(value => where(value)).some(Boolean);
+      };
+
+      return where;
+    };
     return {
       add: item => {
         draft[tableName].push(item);
       },
-      updateBy: (itemProp, value, newValue) => {
-        draft[tableName].forEach(item => {
-          if (item[itemProp] === value) {
-            Object.assign(item[itemProp], newValue);
-          }
-        });
-      },
-      removeBy: (itemProp, value) => {
-        draft[tableName] = draft[tableName].filter(
-          item => item[itemProp] !== value,
-        );
+      updateBy: updateBy as StoreHandlerUpdateByFunction<IS[P]>,
+      deleteBy: deleteBy as StoreHandlerDeleteByFunction<IS[P]>,
+      clear: () => {
+        draft[tableName] = [];
       },
     };
   };
 
-  create<RE extends Store<IS> & A<IS> = Store<IS> & A<IS>>(tables?: A<IS>): RE {
+  create<
+    RE extends Store<IS> & A<IS> & StoreController<IS> = Store<IS> &
+      A<IS> &
+      StoreController<IS>
+  >(tables?: A<IS>): RE {
     const self = this;
     const selectFn = this.select;
     const createFn = this.create;
@@ -185,7 +232,7 @@ export class Pilaf<
     }.bind(object as StoreHandlers<IS> & {
       resolvers: R;
       tables: A<IS>;
-    });
+    } & StoreController<IS>);
 
     tableNames.forEach(tableName => {
       const getter = function(this: {resolvers: R; tables: A<IS>}) {
@@ -195,6 +242,13 @@ export class Pilaf<
         get: getter.bind(object),
       });
     });
+
+    store.clear = () => {
+      return createFn.call(
+        self,
+        Pilaf.createTables<IS>(tableNames as string[]),
+      );
+    };
 
     return store as RE;
   }
@@ -207,7 +261,6 @@ export class Pilaf<
    */
   private select<P extends keyof IS = keyof IS, R extends OS[P][] = OS[P][]>(
     tableName: P,
-    // clear: boolean = true,
   ): OS[P][] {
     const cb = this.resolvers[tableName];
     const keys = Object.keys(this.tables) as P[];
@@ -334,7 +387,7 @@ export class Pilaf<
     return result;
   }
 
-  // clear() {
-  //   this.tables = Pilaf.createTables<A<IS>>(Object.keys(this.tables));
-  // }
+  clear() {
+    this.tables = Pilaf.createTables<A<IS>>(Object.keys(this.tables));
+  }
 }

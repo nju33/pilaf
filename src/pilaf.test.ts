@@ -27,7 +27,11 @@ interface OutputSchema {
   };
 }
 
-let pilaf: Pilaf<InputSchema, OutputSchema>;
+let pilaf = new Pilaf<InputSchema, OutputSchema>({
+  users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
+  userHobbies: ({users}) => [users('id', 'user').one('userId')],
+});
+let store: ReturnType<Pilaf<InputSchema, OutputSchema>['create']>;
 const users = [{id: 0, name: 'foo'}, {id: 1, name: 'bar'}];
 const userHobbies = [
   {
@@ -48,19 +52,7 @@ const userHobbies = [
 ];
 
 beforeEach(() => {
-  pilaf = new Pilaf<InputSchema, OutputSchema>({
-    users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
-    userHobbies: ({users}) => [users('id', 'user').one('userId')],
-  });
-  pilaf.add('users', users[0]);
-  pilaf.add('users', users[1]);
-  pilaf.add('userHobbies', userHobbies[0]);
-  pilaf.add('userHobbies', userHobbies[1]);
-  pilaf.add('userHobbies', userHobbies[2]);
-});
-
-test('set & get items', () => {
-  let store = pilaf.create();
+  store = pilaf.create();
   const userList = users;
   const userHobbyList = userHobbies;
 
@@ -71,7 +63,9 @@ test('set & get items', () => {
     userHobbies.add(userHobbyList[1]);
     userHobbies.add(userHobbyList[2]);
   });
+});
 
+test('set & get items', () => {
   expect(store.users).toMatchObject([
     {
       id: 0,
@@ -107,43 +101,55 @@ test('set & get items', () => {
   expect(alias).toBe(store);
 });
 
-// test('removeBy.id', () => {
-//   expect(pilaf.tables.users).toMatchObject(users);
-//   pilaf.removeBy('users').id(0);
-//   expect(pilaf.tables.users).toMatchObject([users[1]]);
-// });
+test('clear all', () => {
+  store = store.clear();
+  expect(store.users).toHaveLength(0);
+  expect(store.userHobbies).toHaveLength(0);
+});
 
-// test('select [clear=true]', () => {
-//   expect(pilaf.select('userHobbies')).toMatchObject([
-//     {
-//       id: 0,
-//       name: 'プログラミング',
-//       user: users[0],
-//     },
-//     {
-//       id: 1,
-//       name: 'ゲーム',
-//       user: users[1],
-//     },
-//     {
-//       id: 2,
-//       name: '料理',
-//       user: users[0],
-//     },
-//   ]);
+test('clear', () => {
+  store = store(({users}) => {
+    users.clear();
+  });
 
-//   expect(pilaf.tables.users).toBeInstanceOf(Array);
-//   expect(pilaf.tables.users).toHaveLength(0);
-// });
+  expect(store.users).toHaveLength(0);
+  expect(store.userHobbies).toHaveLength(3);
+});
 
-// test('select clear=false', () => {
-//   pilaf.select('users', false);
-//   expect(pilaf.tables.users).toBeInstanceOf(Array);
-//   expect(pilaf.tables.users).not.toHaveLength(0);
-// });
+test('updateBy()()', () => {
+  const updatedStore = store(({users}) => {
+    users.updateBy('name', 'foofoo')('foo');
+  });
 
-// test('clear', () => {
-//   pilaf.clear();
-//   expect(pilaf.tables.users).toBeInstanceOf(Array);
-//   expect(pilaf.tables.users).toHaveLength(0);
-// });
+  expect(store.users.find(user => user.name === 'foofoo')).toBeUndefined();
+  expect(
+    updatedStore.users.find(user => user.name === 'foofoo'),
+  ).not.toBeUndefined();
+});
+
+test('updateBy().in()', () => {
+  const updatedStore = store(({users}) => {
+    users.updateBy('name', 'foofoo').in(['foo', 'bar']);
+  });
+
+  expect(store.users.filter(user => user.name === 'foofoo')).toHaveLength(0);
+  expect(
+    updatedStore.users.filter(user => user.name === 'foofoo'),
+  ).toHaveLength(2);
+});
+
+test('deleteBy()()', () => {
+  store = store(({users}) => {
+    users.deleteBy('id')(0);
+  });
+
+  expect(store.users).toHaveLength(1);
+});
+
+test('deleteBy().in()', () => {
+  store = store(({users, userHobbies}) => {
+    users.deleteBy('id').in([0, 1]);
+  });
+
+  expect(store.users).toHaveLength(0);
+});
