@@ -38,8 +38,8 @@ interface OutputSchema {
   };
 }
 
-const users = [{id: 0, name: 'foo'}, {id: 1, name: 'bar'}];
-const userHobbies = [
+const userList = [{id: 0, name: 'foo'}, {id: 1, name: 'bar'}];
+const userHobbyList = [
   {userId: 0, id: 0, name: 'hoge'},
   {userId: 1, id: 1, name: 'fuga'},
   {userId: 0, id: 2, name: 'piyo'},
@@ -49,28 +49,43 @@ const pilaf = new Pilaf<InputSchema, OutputSchema>({
   users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
   userHobbies: ({users}) => [users('id', 'user').one('userId')],
 });
-pilaf.add('users', users[0]);
-pilaf.add('users', users[1]);
-pilaf.add('userHobbies', userHobbies[0]);
-pilaf.add('userHobbies', userHobbies[1]);
-pilaf.add('userHobbies', userHobbies[2]);
+const store = pilaf.create()(({users, userHobbies}) => {
+  users.add('users', userList[0]);
+  users.add('users', userList[1]);
+  userHobbies.add('userHobbies', userHobbyList[0]);
+  userHobbies.add('userHobbies', userHobbyList[1]);
+  userHobbies.add('userHobbies', userHobbyList[2]);
+});
 
-const userHobbies = pilaf.select('userHobbies', false);
-expect(userHobbies).toMatchObject([
+expect(store.users).toMatchObject([
+  {id: 0, name: 'foo', hobbies: [userHobbies[0], userHobbies[2]]},
+  {id: 1, name: 'bar', hobbies: [userHobbies[1]]},
+]);
+
+expect(store.userHobbies).toMatchObject([
   {user: users[0], id: 0, name: 'hoge'},
   {user: users[1], id: 1, name: 'fuga'},
   {user: users[0], id: 2, name: 'piyo'},
 ]);
-// this.tables.userHobbies.length === 3
 
-const users = pilaf.select('users', false);
-expect(users).toMatchObject([
-  {id: 0, name: 'foo', hobbies: [userHobbies[0], userHobbies[2]]},
-  {id: 1, name: 'bar', hobbies: [userHobbies[1]]},
-]);
-// this.tables.users.length === 2
+const updatedStore = store(({users}) => {
+  users.add({id: 2, name: 'baz'});
+});
 
-pilaf.clear();
-// this.tables.users.length === 0
-// this.tables.userHobbies.length === 0
+expect(updatedStore.users).toHaveLength(3);
+expect(store.users).toHaveLength(2);
+
+expect(store).not.toBe(updatedStore);
+expect(store).toBe(store(() => {}));
+
+store(({users, userHobbies}) => {
+  // users.add(...)
+  // users.updateBy('name', 'newFooName')('name', 'foo');
+  // users.updateBy('name', 'foofoo').in('id', [0, 1]);
+  // users.updateBy('name', 'newName')('id', 0);
+  // userHobbies.deleteBy('id').in([0, 1]);
+  // users.clear();
+});
+
+store.clear();
 ```

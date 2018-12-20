@@ -27,7 +27,11 @@ interface OutputSchema {
   };
 }
 
-let pilaf: Pilaf<InputSchema, OutputSchema>;
+let pilaf = new Pilaf<InputSchema, OutputSchema>({
+  users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
+  userHobbies: ({users}) => [users('id', 'user').one('userId')],
+});
+let store: ReturnType<Pilaf<InputSchema, OutputSchema>['create']>;
 const users = [{id: 0, name: 'foo'}, {id: 1, name: 'bar'}];
 const userHobbies = [
   {
@@ -48,47 +52,21 @@ const userHobbies = [
 ];
 
 beforeEach(() => {
-  pilaf = new Pilaf<InputSchema, OutputSchema>({
-    users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
-    userHobbies: ({users}) => [users('id', 'user').one('userId')],
+  store = pilaf.create();
+  const userList = users;
+  const userHobbyList = userHobbies;
+
+  store = store(({users, userHobbies}) => {
+    users.add(userList[0]);
+    users.add(userList[1]);
+    userHobbies.add(userHobbyList[0]);
+    userHobbies.add(userHobbyList[1]);
+    userHobbies.add(userHobbyList[2]);
   });
-  pilaf.add('users', users[0]);
-  pilaf.add('users', users[1]);
-  pilaf.add('userHobbies', userHobbies[0]);
-  pilaf.add('userHobbies', userHobbies[1]);
-  pilaf.add('userHobbies', userHobbies[2]);
 });
 
-test('removeBy.id', () => {
-  expect(pilaf.tables.users).toMatchObject(users);
-  pilaf.removeBy('users').id(0);
-  expect(pilaf.tables.users).toMatchObject([users[1]]);
-});
-
-test('one resolve', () => {
-  const userHobbies = pilaf.select('userHobbies');
-  expect(userHobbies).toMatchObject([
-    {
-      id: 0,
-      name: 'プログラミング',
-      user: users[0],
-    },
-    {
-      id: 1,
-      name: 'ゲーム',
-      user: users[1],
-    },
-    {
-      id: 2,
-      name: '料理',
-      user: users[0],
-    },
-  ]);
-});
-
-test('many resolve', () => {
-  const users = pilaf.select('users');
-  expect(users).toMatchObject([
+test('set & get items', () => {
+  expect(store.users).toMatchObject([
     {
       id: 0,
       name: 'foo',
@@ -100,10 +78,8 @@ test('many resolve', () => {
       hobbies: [userHobbies[1]],
     },
   ]);
-});
 
-test('select [clear=true]', () => {
-  expect(pilaf.select('userHobbies')).toMatchObject([
+  expect(store.userHobbies).toMatchObject([
     {
       id: 0,
       name: 'プログラミング',
@@ -121,18 +97,59 @@ test('select [clear=true]', () => {
     },
   ]);
 
-  expect(pilaf.tables.users).toBeInstanceOf(Array);
-  expect(pilaf.tables.users).toHaveLength(0);
+  const alias = store(() => {});
+  expect(alias).toBe(store);
 });
 
-test('select clear=false', () => {
-  pilaf.select('users', false);
-  expect(pilaf.tables.users).toBeInstanceOf(Array);
-  expect(pilaf.tables.users).not.toHaveLength(0);
+test('clear all', () => {
+  store = store.clear();
+  expect(store.users).toHaveLength(0);
+  expect(store.userHobbies).toHaveLength(0);
 });
 
 test('clear', () => {
-  pilaf.clear();
-  expect(pilaf.tables.users).toBeInstanceOf(Array);
-  expect(pilaf.tables.users).toHaveLength(0);
+  store = store(({users}) => {
+    users.clear();
+  });
+
+  expect(store.users).toHaveLength(0);
+  expect(store.userHobbies).toHaveLength(3);
+});
+
+test('updateBy()()', () => {
+  const updatedStore = store(({users}) => {
+    users.updateBy('name', 'foofoo')('foo');
+  });
+
+  expect(store.users.find(user => user.name === 'foofoo')).toBeUndefined();
+  expect(
+    updatedStore.users.find(user => user.name === 'foofoo'),
+  ).not.toBeUndefined();
+});
+
+test('updateBy().in()', () => {
+  const updatedStore = store(({users}) => {
+    users.updateBy('name', 'foofoo').in(['foo', 'bar']);
+  });
+
+  expect(store.users.filter(user => user.name === 'foofoo')).toHaveLength(0);
+  expect(
+    updatedStore.users.filter(user => user.name === 'foofoo'),
+  ).toHaveLength(2);
+});
+
+test('deleteBy()()', () => {
+  store = store(({users}) => {
+    users.deleteBy('id')(0);
+  });
+
+  expect(store.users).toHaveLength(1);
+});
+
+test('deleteBy().in()', () => {
+  store = store(({users, userHobbies}) => {
+    users.deleteBy('id').in([0, 1]);
+  });
+
+  expect(store.users).toHaveLength(0);
 });
