@@ -1,23 +1,31 @@
 {
   "name": "pilaf",
+  "description": "A store",
   "version": "0.1.1",
   "main": "dist/main/index.js",
   "types": "dist/types/index.d.ts",
   "module": "dist/module/index.js",
+  "umd:main": "pilaf.js",
   "source": "src/index.ts",
   "files": [
-    "dist"
+    "dist",
+    "pilaf.js"
   ],
+  "repository": "git@github.com:nju33/pilaf.git",
+  "homepage": "https://github.com/nju33/pilaf",
+  "bugs": "https://github.com/nju33/nju33/pilaf/issues",
   "license": "MIT",
   "scripts": {
     "prepare": "yarn build",
     "test": "jest",
+    "typedoc": "typedoc --theme minimal --out docs src/index.ts --ignoreCompilerErrors",
     "docz.dev": "docz dev --port 6069",
     "docz.build": "docz build",
     "build.main": "tsc -P tsconfig.main.json",
     "build.module": "tsc -P tsconfig.module.json",
+    "build.umd": "rollup dist/module/index.js --external immer --globals immer:immer.produce --format iife --name pilaf --file pilaf.js",
     "build.types": "tsc -P tsconfig.types.json --emitDeclarationOnly",
-    "build": "yarn build.main; yarn build.module; yarn build.types"
+    "build": "yarn build.main; yarn build.module; yarn build.umd; yarn build.types"
   },
   "peerDependencies": {},
   "dependencies": {
@@ -31,8 +39,10 @@
     "jest": "23.6.0",
     "prettier": "1.15.3",
     "renovate-config-nju33": "0.0.1",
+    "rollup": "^0.68.1",
     "ts-jest": "23.10.5",
     "tslint": "5.11.0",
+    "typedoc": "^0.13.0",
     "typescript": "3.2.2"
   }
 }
