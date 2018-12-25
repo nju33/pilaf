@@ -75,11 +75,8 @@ const pilaf = new Pilaf<InputSchema, OutputSchema>({
   userHobbies: ({users}) => [users('id', 'user').one('userId')],
 });
 const store = pilaf.create()(({users, userHobbies}) => {
-  users.add(userList[0]);
-  users.add(userList[1]);
-  userHobbies.add(userHobbyList[0]);
-  userHobbies.add(userHobbyList[1]);
-  userHobbies.add(userHobbyList[2]);
+  users.add(userList);
+  userHobbies.add(userHobbyList);
 });
 
 expect(store.users).toMatchObject([
@@ -114,3 +111,8 @@ store(({users, userHobbies}) => {
 
 store.clear();
 ```
+
+
+### Redux
+
+[https://codesandbox.io/s/l7m2y5nj2l](https://codesandbox.io/s/l7m2y5nj2l)

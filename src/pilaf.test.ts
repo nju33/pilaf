@@ -51,6 +51,22 @@ const userHobbies = [
   },
 ];
 
+
+test('initial tables', () => {
+  const tables = new Pilaf<InputSchema, OutputSchema>({
+    users: () => [],
+    userHobbies: () => [],
+  });
+  const userList = users;
+
+  const store = tables.create()(({users}) => {
+    users.add(userList);
+  });
+
+  expect(store.users).toMatchObject(userList);
+});
+
+
 beforeEach(() => {
   store = pilaf.create();
   const userList = users;
