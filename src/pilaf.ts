@@ -1,28 +1,19 @@
 import produce from 'immer';
 
-/**
- * Change object values `T[P]` into array `T[P][]`
- */
 export type ArrayedObject<T extends {[x: string]: any}> = {
   [P in keyof T]: T[P][]
 };
 
 /**
- * @alias ArrayedObject
+ * @alias
  */
 type A<T extends {[x: string]: any}> = ArrayedObject<T>;
 
-/**
- * Type of how to resolves data
- */
 enum ResolverResultType {
   One,
   Many,
 }
 
-/**
- * Data map in which to use during resolving
- */
 const resolverResultMap: WeakMap<
   object,
   {
@@ -103,34 +94,19 @@ type StoreHandlers<T extends {[x: string]: any}> = {
   [P in keyof T]: StoreHandlerFunctions<T[P]>
 };
 
-interface StoreController<T extends {[x: string]: any}, PL> {
-  clear(): StoreFn<T, PL> & A<T> & StoreController<T, PL>;
+interface StoreController<T extends {[x: string]: any}> {
+  clear(): Store<T> & A<T> & StoreController<T>;
 }
 
 interface StoreHandlersFunction<T extends {[x: string]: any}> {
   (handlers: StoreHandlers<T>): void;
 }
 
-export type StorePrototypeLikeThis<T extends {[x: string]: any}, PL> = ((
-  cb: (handlers: StoreHandlers<T>) => void,
-) => Store<T, PL>);
-
-export type Store<T extends {[x: string]: any}, PL> = StoreFn<T, PL> &
-  A<T> &
-  StoreController<T, PL> &
-  PL;
-
-/**
- * Immutable store
- */
-export interface StoreFn<T extends {[x: string]: any}, PL> {
+interface Store<T extends {[x: string]: any}> {
   this: StoreHandlers<T> & {tables: any};
-  (cb?: StoreHandlersFunction<T>): Store<T, PL>;
+  (cb: StoreHandlersFunction<T>): Store<T> & A<T> & StoreController<T>;
 }
 
-/**
- * A store
- */
 export class Pilaf<
   IS extends object,
   OS extends Record<keyof IS, any>,
@@ -219,15 +195,14 @@ export class Pilaf<
     };
   };
 
-  create<PL extends unknown = unknown>(
-    prototypeLike?: PL,
-    tables?: A<IS>,
-  ): Store<IS, PL> {
+  create<
+    RE extends Store<IS> & A<IS> & StoreController<IS> = Store<IS> &
+      A<IS> &
+      StoreController<IS>
+  >(tables?: A<IS>): RE {
     const self = this;
     const selectFn = this.select;
     const createFn = this.create;
-    const prototypeLikeObj = prototypeLike || ({} as {});
-    const prototypeNames = Object.keys(prototypeLikeObj);
     const tableNames = Object.keys(this.tables) as (keyof IS)[];
     const createTableHandler = this.createTableHandler;
     const object: {
@@ -239,13 +214,9 @@ export class Pilaf<
     };
 
     const store: any = function(
-      this: StoreHandlers<IS> & {resolvers: R; tables: A<IS>},
-      cb?: (handlers: StoreHandlers<IS>) => void,
+      this: StoreHandlers<IS> & {tables: A<IS>},
+      cb: (handlers: StoreHandlers<IS>) => void,
     ) {
-      if (cb === undefined) {
-        return store;
-      }
-
       const tables = produce<A<IS>>(draft => {
         const storeHandlers = tableNames.reduce(
           (result, tableName) => {
@@ -259,31 +230,13 @@ export class Pilaf<
       })(object.tables);
 
       if (tables === this.tables) {
-        return store as Store<IS, PL>;
+        return store as RE;
       }
-      return createFn.call(self, prototypeLikeObj, tables);
+      return createFn.call(self, tables);
     }.bind(object as StoreHandlers<IS> & {
       resolvers: R;
       tables: A<IS>;
-    } & StoreController<IS, PL>);
-
-    prototypeNames.forEach(prototypeKey => {
-      if (
-        typeof (prototypeLikeObj as {[x: string]: any})[prototypeKey] ===
-        'function'
-      ) {
-        Object.defineProperty(store, prototypeKey, {
-          value: (prototypeLikeObj as {[x: string]: any})[prototypeKey].bind(
-            store,
-          ),
-        });
-      } else {
-        Object.defineProperty(store, prototypeKey, {
-          enumerable: true,
-          value: (prototypeLikeObj as {[x: string]: any})[prototypeKey],
-        });
-      }
-    });
+    } & StoreController<IS>);
 
     tableNames.forEach(tableName => {
       const getter = function(this: {resolvers: R; tables: A<IS>}) {
@@ -297,12 +250,11 @@ export class Pilaf<
     store.clear = () => {
       return createFn.call(
         self,
-        prototypeLikeObj,
         Pilaf.createTables<IS>(tableNames as string[]),
       );
     };
 
-    return store as Store<IS, PL>;
+    return store as RE;
   }
 
   /**

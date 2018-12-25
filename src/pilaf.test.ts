@@ -1,4 +1,4 @@
-import {Pilaf, StorePrototypeLikeThis, Store} from './pilaf';
+import {Pilaf} from './pilaf';
 
 interface InputSchema {
   users: {
@@ -27,13 +27,6 @@ interface OutputSchema {
   };
 }
 
-interface PrototypeLike {
-  addUser: (
-    this: StorePrototypeLikeThis<InputSchema, PrototypeLike>,
-    users: InputSchema['users'] | InputSchema['users'][],
-  ) => Store<InputSchema, PrototypeLike>;
-}
-
 let pilaf = new Pilaf<InputSchema, OutputSchema>({
   users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
   userHobbies: ({users}) => [users('id', 'user').one('userId')],
@@ -58,33 +51,38 @@ const userHobbies = [
   },
 ];
 
+
 test('initial tables', () => {
+  const tables = new Pilaf<InputSchema, OutputSchema>({
+    users: () => [],
+    userHobbies: () => [],
+  });
   const userList = users;
 
-  const store = pilaf.create()(({users}) => {
+  const store = tables.create()(({users}) => {
     users.add(userList);
   });
 
   expect(store.users).toMatchObject(userList);
 });
 
-test('prototypeLikeObject', () => {
+
+beforeEach(() => {
+  store = pilaf.create();
+  const userList = users;
   const userHobbyList = userHobbies;
 
-  const createStore = pilaf.create<PrototypeLike>({
-    addUser(userList) {
-      return this(({users}) => {
-        users.add(userList);
-      });
-    },
+  store = store(({users, userHobbies}) => {
+    users.add(userList[0]);
+    users.add(userList[1]);
+    userHobbies.add(userHobbyList[0]);
+    userHobbies.add(userHobbyList[1]);
+    userHobbies.add(userHobbyList[2]);
   });
+});
 
-  const store = createStore(({userHobbies}) => {
-    userHobbies.add(userHobbyList);
-  });
-
-  const newStore = store.addUser(users[0]).addUser(users[1]);
-  expect(newStore.users).toMatchObject([
+test('set & get items', () => {
+  expect(store.users).toMatchObject([
     {
       id: 0,
       name: 'foo',
@@ -96,111 +94,78 @@ test('prototypeLikeObject', () => {
       hobbies: [userHobbies[1]],
     },
   ]);
-  expect(store).not.toBe(newStore);
-  expect(store).toBe(store.addUser([]));
+
+  expect(store.userHobbies).toMatchObject([
+    {
+      id: 0,
+      name: 'プログラミング',
+      user: users[0],
+    },
+    {
+      id: 1,
+      name: 'ゲーム',
+      user: users[1],
+    },
+    {
+      id: 2,
+      name: '料理',
+      user: users[0],
+    },
+  ]);
+
+  const alias = store(() => {});
+  expect(alias).toBe(store);
 });
 
-describe('common', () => {
-  beforeEach(() => {
-    store = pilaf.create();
-    const userList = users;
-    const userHobbyList = userHobbies;
+test('clear all', () => {
+  store = store.clear();
+  expect(store.users).toHaveLength(0);
+  expect(store.userHobbies).toHaveLength(0);
+});
 
-    store = store(({users, userHobbies}) => {
-      users.add(userList[0]);
-      users.add(userList[1]);
-      userHobbies.add(userHobbyList[0]);
-      userHobbies.add(userHobbyList[1]);
-      userHobbies.add(userHobbyList[2]);
-    });
+test('clear', () => {
+  store = store(({users}) => {
+    users.clear();
   });
 
-  test('set & get items', () => {
-    expect(store.users).toMatchObject([
-      {
-        id: 0,
-        name: 'foo',
-        hobbies: [userHobbies[0], userHobbies[2]],
-      },
-      {
-        id: 1,
-        name: 'bar',
-        hobbies: [userHobbies[1]],
-      },
-    ]);
+  expect(store.users).toHaveLength(0);
+  expect(store.userHobbies).toHaveLength(3);
+});
 
-    expect(store.userHobbies).toMatchObject([
-      {
-        id: 0,
-        name: 'プログラミング',
-        user: users[0],
-      },
-      {
-        id: 1,
-        name: 'ゲーム',
-        user: users[1],
-      },
-      {
-        id: 2,
-        name: '料理',
-        user: users[0],
-      },
-    ]);
-
-    const alias = store(() => {});
-    expect(alias).toBe(store);
+test('updateBy()()', () => {
+  const updatedStore = store(({users}) => {
+    users.updateBy('name', 'foofoo')('foo');
   });
 
-  test('clear all', () => {
-    store = store.clear();
-    expect(store.users).toHaveLength(0);
-    expect(store.userHobbies).toHaveLength(0);
+  expect(store.users.find(user => user.name === 'foofoo')).toBeUndefined();
+  expect(
+    updatedStore.users.find(user => user.name === 'foofoo'),
+  ).not.toBeUndefined();
+});
+
+test('updateBy().in()', () => {
+  const updatedStore = store(({users}) => {
+    users.updateBy('name', 'foofoo').in(['foo', 'bar']);
   });
 
-  test('clear', () => {
-    store = store(({users}) => {
-      users.clear();
-    });
+  expect(store.users.filter(user => user.name === 'foofoo')).toHaveLength(0);
+  expect(
+    updatedStore.users.filter(user => user.name === 'foofoo'),
+  ).toHaveLength(2);
+});
 
-    expect(store.users).toHaveLength(0);
-    expect(store.userHobbies).toHaveLength(3);
+test('deleteBy()()', () => {
+  store = store(({users}) => {
+    users.deleteBy('id')(0);
   });
 
-  test('updateBy()()', () => {
-    const updatedStore = store(({users}) => {
-      users.updateBy('name', 'foofoo')('foo');
-    });
+  expect(store.users).toHaveLength(1);
+});
 
-    expect(store.users.find(user => user.name === 'foofoo')).toBeUndefined();
-    expect(
-      updatedStore.users.find(user => user.name === 'foofoo'),
-    ).not.toBeUndefined();
+test('deleteBy().in()', () => {
+  store = store(({users, userHobbies}) => {
+    users.deleteBy('id').in([0, 1]);
   });
 
-  test('updateBy().in()', () => {
-    const updatedStore = store(({users}) => {
-      users.updateBy('name', 'foofoo').in(['foo', 'bar']);
-    });
-
-    expect(store.users.filter(user => user.name === 'foofoo')).toHaveLength(0);
-    expect(
-      updatedStore.users.filter(user => user.name === 'foofoo'),
-    ).toHaveLength(2);
-  });
-
-  test('deleteBy()()', () => {
-    store = store(({users}) => {
-      users.deleteBy('id')(0);
-    });
-
-    expect(store.users).toHaveLength(1);
-  });
-
-  test('deleteBy().in()', () => {
-    store = store(({users, userHobbies}) => {
-      users.deleteBy('id').in([0, 1]);
-    });
-
-    expect(store.users).toHaveLength(0);
-  });
+  expect(store.users).toHaveLength(0);
 });
