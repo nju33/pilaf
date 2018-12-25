@@ -83,15 +83,15 @@ interface StoreHandlerDeleteByFunction<T extends {[x: string]: any}> {
   >;
 }
 
-interface StoreHandlerFunctions<T extends {[x: string]: any}> {
+interface TableHandlerFunctions<T extends {[x: string]: any}> {
   add(item: T | T[]): void;
   updateBy: StoreHandlerUpdateByFunction<T>;
   deleteBy: StoreHandlerDeleteByFunction<T>;
   clear(): void;
 }
 
-type StoreHandlers<T extends {[x: string]: any}> = {
-  [P in keyof T]: StoreHandlerFunctions<T[P]>
+export type TableHandlers<T extends {[x: string]: any}> = {
+  [P in keyof T]: TableHandlerFunctions<T[P]>
 };
 
 interface StoreController<T extends {[x: string]: any}> {
@@ -99,11 +99,11 @@ interface StoreController<T extends {[x: string]: any}> {
 }
 
 interface StoreHandlersFunction<T extends {[x: string]: any}> {
-  (handlers: StoreHandlers<T>): void;
+  (handlers: TableHandlers<T>): void;
 }
 
 interface Store<T extends {[x: string]: any}> {
-  this: StoreHandlers<T> & {tables: any};
+  this: TableHandlers<T> & {tables: any};
   (cb: StoreHandlersFunction<T>): Store<T> & A<T> & StoreController<T>;
 }
 
@@ -130,7 +130,7 @@ export class Pilaf<
 
   private createTableHandler = <P extends keyof IS>(tableName: P) => (
     draft: A<IS>,
-  ): StoreHandlerFunctions<IS[P]> => {
+  ): TableHandlerFunctions<IS[P]> => {
     const updateBy: any = function<IP extends keyof IS[P]>(
       itemProp: IP,
       newValue: IS[P][IP],
@@ -214,8 +214,8 @@ export class Pilaf<
     };
 
     const store: any = function(
-      this: StoreHandlers<IS> & {tables: A<IS>},
-      cb: (handlers: StoreHandlers<IS>) => void,
+      this: TableHandlers<IS> & {tables: A<IS>},
+      cb: (handlers: TableHandlers<IS>) => void,
     ) {
       const tables = produce<A<IS>>(draft => {
         const storeHandlers = tableNames.reduce(
@@ -223,7 +223,7 @@ export class Pilaf<
             result[tableName] = createTableHandler(tableName)(draft as any);
             return result;
           },
-          {} as StoreHandlers<IS>,
+          {} as TableHandlers<IS>,
         );
 
         cb(storeHandlers);
@@ -233,7 +233,7 @@ export class Pilaf<
         return store as RE;
       }
       return createFn.call(self, tables);
-    }.bind(object as StoreHandlers<IS> & {
+    }.bind(object as TableHandlers<IS> & {
       resolvers: R;
       tables: A<IS>;
     } & StoreController<IS>);

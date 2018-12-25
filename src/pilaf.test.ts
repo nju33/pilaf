@@ -1,4 +1,4 @@
-import {Pilaf} from './pilaf';
+import {Pilaf, TableHandlers} from './pilaf';
 
 interface InputSchema {
   users: {
@@ -51,7 +51,6 @@ const userHobbies = [
   },
 ];
 
-
 test('initial tables', () => {
   const tables = new Pilaf<InputSchema, OutputSchema>({
     users: () => [],
@@ -59,13 +58,14 @@ test('initial tables', () => {
   });
   const userList = users;
 
-  const store = tables.create()(({users}) => {
+  const initUser = ({users}: TableHandlers<InputSchema>) => {
     users.add(userList);
-  });
+  };
+
+  const store = tables.create()(initUser);
 
   expect(store.users).toMatchObject(userList);
 });
-
 
 beforeEach(() => {
   store = pilaf.create();
