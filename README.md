@@ -124,3 +124,8 @@ store(({users, userHobbies}) => {
 
 store.clear();
 ```
+
+
+### Redux
+
+[https://codesandbox.io/s/l7m2y5nj2l](https://codesandbox.io/s/l7m2y5nj2l)
