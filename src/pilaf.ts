@@ -84,7 +84,7 @@ interface StoreHandlerDeleteByFunction<T extends {[x: string]: any}> {
 }
 
 interface StoreHandlerFunctions<T extends {[x: string]: any}> {
-  add(item: T): void;
+  add(item: T | T[]): void;
   updateBy: StoreHandlerUpdateByFunction<T>;
   deleteBy: StoreHandlerDeleteByFunction<T>;
   clear(): void;
@@ -181,6 +181,10 @@ export class Pilaf<
     };
     return {
       add: item => {
+        if (Array.isArray(item)) {
+          draft[tableName].push(...item);
+          return;
+        }
         draft[tableName].push(item);
       },
       updateBy: updateBy as StoreHandlerUpdateByFunction<IS[P]>,
