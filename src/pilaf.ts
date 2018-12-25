@@ -298,7 +298,7 @@ export class Pilaf<
           return {
             type: ResolverResultType.Many,
             propName: resolverResultMap.has(this)
-              ? resolverResultMap.get(this)!.propName
+              ? resolverResultMap.get(this)!.propName || key
               : key,
             from: tableName,
             base,
