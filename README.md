@@ -20,7 +20,7 @@ A store.
  * yarn add pilaf 
  * ```
  */
-import Pilaf from 'pilaf';
+import Pilaf, {Store, StorePrototypeLikeThis} from 'pilaf';
 ```
 
 or
@@ -63,6 +63,13 @@ interface OutputSchema {
   };
 }
 
+interface PrototypeLike {
+  addUser: (
+    this: StorePrototypeLikeThis<InputSchema, PrototypeLike>,
+    users: InputSchema['users'] | InputSchema['users'][],
+  ) => Store<InputSchema, PrototypeLike>;
+}
+
 const userList = [{id: 0, name: 'foo'}, {id: 1, name: 'bar'}];
 const userHobbyList = [
   {userId: 0, id: 0, name: 'hoge'},
@@ -70,16 +77,19 @@ const userHobbyList = [
   {userId: 0, id: 2, name: 'piyo'},
 ];
 
-const pilaf = new Pilaf<InputSchema, OutputSchema>({
+const pilaf = new Pilaf<InputSchema, OutputSchema, PrototypeLike>({
   users: ({userHobbies}) => [userHobbies('userId', 'hobbies').many('id')],
   userHobbies: ({users}) => [users('id', 'user').one('userId')],
 });
-const store = pilaf.create()(({users, userHobbies}) => {
-  users.add(userList[0]);
-  users.add(userList[1]);
-  userHobbies.add(userHobbyList[0]);
-  userHobbies.add(userHobbyList[1]);
-  userHobbies.add(userHobbyList[2]);
+const store = pilaf.create<PrototypeLike>({
+  addUser(userList) {
+    return this(({users}) => {
+      users.add(userList);
+    });
+  }
+})(({users, userHobbies}) => {
+  users.add(userList);
+  userHobbies.add(userHobbyList);
 });
 
 expect(store.users).toMatchObject([
@@ -93,8 +103,8 @@ expect(store.userHobbies).toMatchObject([
   {user: users[0], id: 2, name: 'piyo'},
 ]);
 
-const updatedStore = store(({users}) => {
-  users.add({id: 2, name: 'baz'});
+const updatedStore = store.addUser({id: 2, name: 'baz'})(({users}) => {
+  users.add({id: 3, name: 'qux'});
 });
 
 expect(updatedStore.users).toHaveLength(3);
