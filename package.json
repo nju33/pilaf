@@ -42,7 +42,7 @@
     "rollup": "0.68.2",
     "ts-jest": "23.10.5",
     "tslint": "5.12.0",
-    "typedoc": "0.13.0",
+    "typedoc": "0.14.0",
     "typescript": "3.2.2"
   }
 }
