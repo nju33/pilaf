@@ -35,7 +35,7 @@
     "@nju33/tsconfig-main": "0.0.3",
     "@nju33/tsconfig-module": "0.0.3",
     "@nju33/tsconfig-types": "0.0.3",
-    "@types/jest": "23.3.10",
+    "@types/jest": "23.3.11",
     "jest": "23.6.0",
     "prettier": "1.15.3",
     "renovate-config-nju33": "0.0.1",
