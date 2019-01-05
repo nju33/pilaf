@@ -18,11 +18,6 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@nju33/tsconfig-base@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-base/-/tsconfig-base-0.0.5.tgz#b486c25667b3a3329e2a1040fab185ebfc99c2f3"
-  integrity sha512-hL5ioobDmguNE8hB8BoTlf7BYot+/AQ/aPd/kbSxcOQdu3u8AxBuxo04194BjUUsMfni/XJDV2k4jULa0Nibog==
-
 "@nju33/tsconfig-base@^0.0.6":
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/@nju33/tsconfig-base/-/tsconfig-base-0.0.6.tgz#f7343bf66d40d72bd84a818589efac13e640829b"
@@ -35,12 +30,12 @@
   dependencies:
     "@nju33/tsconfig-base" "^0.0.6"
 
-"@nju33/tsconfig-module@0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-module/-/tsconfig-module-0.0.5.tgz#7315e63dd62acc855f7ad58ea73a32339e0bce52"
-  integrity sha512-bJOBXbBc6bXv21xJa6t+q/M5XT7pwJWDiZLBAP8stnCm5usLn+qsJvhkpQkcCO0+eWUPD3JjALhj3Fa/DWtaAQ==
+"@nju33/tsconfig-module@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-module/-/tsconfig-module-0.0.6.tgz#ee9dc826a9258756c5c7969068ae53db11bc03eb"
+  integrity sha512-kW2JubKdO8YtN2TaRdBbVPzRNHEffrTBuwz8jXiEdIQ3ngBcwRf1Q77Pk49mM2LvnPN+8Xy8GL+jXxnV/cwYXw==
   dependencies:
-    "@nju33/tsconfig-base" "^0.0.5"
+    "@nju33/tsconfig-base" "^0.0.6"
 
 "@nju33/tsconfig-types@0.0.6":
   version "0.0.6"
