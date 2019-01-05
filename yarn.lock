@@ -23,12 +23,17 @@
   resolved "https://registry.yarnpkg.com/@nju33/tsconfig-base/-/tsconfig-base-0.0.3.tgz#2a06c352df2f5292316e469f5c47d465cfb944bf"
   integrity sha512-zkdulCZfvQ4DlIb9Iq7jyBludV/A6Pa5EPJpI0TwLlHg0aAJgDVDe1eSH2DK9V6OGvmkTK8dTRAq+9YwVRMpqQ==
 
-"@nju33/tsconfig-main@0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-main/-/tsconfig-main-0.0.3.tgz#0845f1ecd354c19240195db006b05eeee83d2329"
-  integrity sha512-QQZc+Lf/ylnBqDWY48tx/Z9723I+EFRQxmUz+Or/FUoNzy9ZSYo5HlW3HIpPfu9UhiwVvmeqIeZ+idTgRKibjA==
+"@nju33/tsconfig-base@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-base/-/tsconfig-base-0.0.5.tgz#b486c25667b3a3329e2a1040fab185ebfc99c2f3"
+  integrity sha512-hL5ioobDmguNE8hB8BoTlf7BYot+/AQ/aPd/kbSxcOQdu3u8AxBuxo04194BjUUsMfni/XJDV2k4jULa0Nibog==
+
+"@nju33/tsconfig-main@0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-main/-/tsconfig-main-0.0.5.tgz#08c909cb529b71b557df9594a30fe4d9978d65d5"
+  integrity sha512-OpEGCcwtrpXdp7xcfoEDc3X8XO62CHl1btIzGFDIdsTQlxCdWLR5AER4aAqOn3jYSu7Zw5bEUtj4/cFbbgaBeA==
   dependencies:
-    "@nju33/tsconfig-base" "^0.0.3"
+    "@nju33/tsconfig-base" "^0.0.5"
 
 "@nju33/tsconfig-module@0.0.3":
   version "0.0.3"
