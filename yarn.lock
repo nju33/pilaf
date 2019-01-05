@@ -42,12 +42,12 @@
   dependencies:
     "@nju33/tsconfig-base" "^0.0.5"
 
-"@nju33/tsconfig-types@0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-types/-/tsconfig-types-0.0.5.tgz#35dc788bb002c6071055848774d9bc4184855ecd"
-  integrity sha512-Yu/whFZc3mQOUd25SKxNvYocN0bPK6++bXYIvRV3c2ASjwyc3m5R8zoMt+4oec2+o7U8DYKtadfUvgoAl6nH5A==
+"@nju33/tsconfig-types@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@nju33/tsconfig-types/-/tsconfig-types-0.0.6.tgz#e2b85ef8806a7d9339bf2f024563bd6c8640f34b"
+  integrity sha512-KnEUOFn3TMrQLXGSzCgRvI/zmGf/f6NZ8XtRXtN1tnYQ/141/xy8CyWcLOl5oGlK65UjAKrpeS30JNXbUe50SA==
   dependencies:
-    "@nju33/tsconfig-base" "^0.0.5"
+    "@nju33/tsconfig-base" "^0.0.6"
 
 "@types/estree@0.0.39":
   version "0.0.39"
