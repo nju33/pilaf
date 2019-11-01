@@ -1404,10 +1404,10 @@ ignore-walk@^3.0.1:
   dependencies:
     minimatch "^3.0.4"
 
-immer@^1.9.2:
-  version "1.9.2"
-  resolved "https://registry.yarnpkg.com/immer/-/immer-1.9.2.tgz#2b26f53be03baf00622005bccbc37c063d619408"
-  integrity sha512-AmTGHRa7IRer/MTyQqTBn3FkhuE6FWkH5qTzBd4mbtI6EVSuVSgx2lv8q8pW0jgZ7+RMTIHAmCaWR/tEVIQGaQ==
+immer@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/immer/-/immer-5.0.0.tgz#07f462b7d95f7e86c214a861ecacd766d42b8c0a"
+  integrity sha512-G7gRqKbi9NE025XVyqyTV98dxUOtdKvu/P1QRaVZfA55aEcXgjbxPdm+TlWdcSMNPKijlaHNz61DGPyelouRlA==
 
 import-local@^1.0.0:
   version "1.0.0"
