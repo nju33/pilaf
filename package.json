@@ -29,7 +29,7 @@
   },
   "peerDependencies": {},
   "dependencies": {
-    "immer": "^1.9.2"
+    "immer": "^6.0.0"
   },
   "devDependencies": {
     "@nju33/tsconfig-main": "0.0.26",
